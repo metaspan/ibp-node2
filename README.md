@@ -51,7 +51,7 @@ Enjoy!
 - pub fn update_service_level(service_id: ServiceId, level: MembershipLevel)
 
 ### Healthcheck Pallet
-- pub fn register_health_check(
+- pub fn register_health_check(member_id: T::AccountId, service_id: ServiceId, domain_id: DomainId, check_type: HealthCheckType, status: HealthCheckStatus)
 
 # Substrate Node Template
 
