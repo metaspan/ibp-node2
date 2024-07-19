@@ -43,16 +43,15 @@ Enjoy!
 - pub fn remove_curator(account_id: T::AccountId)
 
 ### Service Pallet
--pub fn register_service( id: ServiceId, chain_id: ChainId, service_type: ServiceType, level: MembershipLevel, status: ServiceStatus)
-
--pub fn lock_service(service_id: ServiceId)
--pub fn unlock_service(service_id: ServiceId)
--pub fn delete_service(service_id: ServiceId)
--pub fn undelete_service(service_id: ServiceId)
--pub fn update_service_level(service_id: ServiceId, level: MembershipLevel)
+- pub fn register_service( id: ServiceId, chain_id: ChainId, service_type: ServiceType, level: MembershipLevel, status: ServiceStatus)
+- pub fn lock_service(service_id: ServiceId)
+- pub fn unlock_service(service_id: ServiceId)
+- pub fn delete_service(service_id: ServiceId)
+- pub fn undelete_service(service_id: ServiceId)
+- pub fn update_service_level(service_id: ServiceId, level: MembershipLevel)
 
 ### Healthcheck Pallet
-= pub fn register_health_check(
+- pub fn register_health_check(
 
 # Substrate Node Template
 
