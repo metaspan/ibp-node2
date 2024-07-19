@@ -1,10 +1,61 @@
+# IBP Substrate Node 
 
+## Quick Start
 
+```bash
+git clone https://github.com/metaspan/ibp-node2
+cd ibp-node2
+cargo build
 ./target/debug/node-template --dev \
  --rpc-external \
- --rpc-cors=all
- 
- --listen=/ip4/0.0.0.0/tcp/9955/ws
+ --rpc-cors=all 
+```
+
+## Open another terminal
+```bash
+cd ibp-node2/tests
+node setup.sh
+# wait for the setup to complete
+node watch-member-status.js
+```
+
+## Open a browser
+
+Launch the Polkadot JS Apps in the browser and connect to the local node
+- https://polkadot.js.org/apps/#/explorer?rpc=ws://localhost:9944
+
+Enjoy!
+
+## Features
+
+### Member Pallet
+- pub fn register_member()
+- pub fn chill_member()
+- pub fn unchill_member()
+- pub fn lock_member(account_id: T::AccountId)
+- pub fn unlock_member(account_id: T::AccountId)
+- pub fn delete_member(account_id: T::AccountId)
+- pub fn undelete_member(account_id: T::AccountId)
+- pub fn update_member_level(account_id: T::AccountId, level: MembershipLevel)
+- pub fn assign_monitor(account_id: T::AccountId)
+- pub fn remove_monitor(account_id: T::AccountId)
+- pub fn assign_curator(account_id: T::AccountId)
+- pub fn remove_curator(account_id: T::AccountId)
+
+### Service Pallet
+-pub fn register_service( id: ServiceId,
+            chain_id: ChainId,
+            service_type: ServiceType,
+            level: MembershipLevel,
+            status: ServiceStatus)
+-pub fn lock_service(service_id: ServiceId)
+-pub fn unlock_service(service_id: ServiceId)
+-pub fn delete_service(service_id: ServiceId)
+-pub fn undelete_service(service_id: ServiceId)
+-pub fn update_service_level(service_id: ServiceId, level: MembershipLevel)
+
+### Healthcheck Pallet
+= pub fn register_health_check(
 
 # Substrate Node Template
 
