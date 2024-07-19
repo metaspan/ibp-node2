@@ -43,11 +43,7 @@ Enjoy!
 - pub fn remove_curator(account_id: T::AccountId)
 
 ### Service Pallet
--pub fn register_service( id: ServiceId,
-            chain_id: ChainId,
-            service_type: ServiceType,
-            level: MembershipLevel,
-            status: ServiceStatus)
+-pub fn register_service( id: ServiceId, chain_id: ChainId, service_type: ServiceType, level: MembershipLevel, status: ServiceStatus)
 -pub fn lock_service(service_id: ServiceId)
 -pub fn unlock_service(service_id: ServiceId)
 -pub fn delete_service(service_id: ServiceId)
