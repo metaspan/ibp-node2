@@ -50,6 +50,11 @@ Enjoy!
 - pub fn undelete_service(service_id: ServiceId)
 - pub fn update_service_level(service_id: ServiceId, level: MembershipLevel)
 
+### Alert Pallet
+- pub fn register_alert(alert_id: u64, member_id: T::AccountId, service_id: ServiceId, domain_id: DomainId, alert_type: AlertType)
+- pub fn clear_alert(alert_id: u64)
+- pub fn clear_monitor_alert(monitor_id: T::AccountId, alert_id: u64)
+
 ### Healthcheck Pallet
 - pub fn register_health_check(member_id: T::AccountId, service_id: ServiceId, domain_id: DomainId, check_type: HealthCheckType, status: HealthCheckStatus)
 
