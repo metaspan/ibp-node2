@@ -76,6 +76,24 @@ import { getNonce, handleTransactionResponse } from './utils.js';
     // console.log(result.toJSON());
   }
 
+  // sleep 6 seconds to allow charlie to monitor the services
+  await new Promise(resolve => setTimeout(resolve, 6000));
+
+  // create some alerts
+  // Alice is the member
+  // Charlie is the monitor
+  let alerts = [
+    { is: 1, member_id: alice.address, domain_id: 'testnet.ibp.network', service_id: 'westend-rpc', alert_type: 'HTTPTest' },
+    { id: 2, member_id: alice.address, domain_id: 'testnet.ibp.network', service_id: 'kusama-rpc', alert_type: 'HTTPTest' },
+    { id: 3, member_id: alice.address, domain_id: 'testnet.ibp.network', service_id: 'polkadot-rpc', alert_type: 'HTTPTest' },
+    { id: 4, member_id: alice.address, domain_id: 'testnet.ibp.network', service_id: 'asset-hub-westend-rpc', alert_type: 'HTTPTest' },
+  ]
+  for(let i = 0; i < alerts.length; i++) {
+    const alert = alerts[i];
+    tx = api.tx.ibpAlert.registerAlert(alert.id, alert.member_id, alert.service_id, alert.domain_id, alert.alert_type);
+    await tx.signAndSend(charlie, { nonce: charlie_nonce++, tip: 1000000000 }, (r) => handleTransactionResponse(api, r));
+  }
+
   // wait for 30 seconds before exiting
   setTimeout(() => {
     process.exit(0);

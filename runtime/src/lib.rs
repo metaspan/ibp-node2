@@ -3,6 +3,7 @@
 #[cfg(feature = "std")]
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
+use frame_system::pallet;
 use pallet_grandpa::AuthorityId as GrandpaId;
 use sp_api::impl_runtime_apis;
 use sp_consensus_aura::sr25519::AuthorityId as AuraId;
@@ -47,6 +48,8 @@ pub use pallet_template;
 /// Import the IBP Member pallet.
 pub use pallet_ibp_member;
 pub use pallet_ibp_service;
+pub use pallet_ibp_check;
+pub use pallet_ibp_alert;
 
 /// An index to a block.
 pub type BlockNumber = u32;
@@ -278,6 +281,13 @@ impl pallet_ibp_check::Config for Runtime {
   type WeightInfo = pallet_ibp_check::weights::SubstrateWeight<Runtime>;
 }
 
+/// Configure the IBP Alert pallet in pallets/ibp-alert.
+impl pallet_ibp_alert::Config for Runtime {
+  type RuntimeEvent = RuntimeEvent;
+  // type WeightInfo = pallet_ibp_alert::weights::SubstrateWeight<Runtime>;
+  type AlertKey = pallet_ibp_alert::AlertKey<Runtime>;
+}
+
 // Create the runtime by composing the FRAME pallets that were previously configured.
 #[frame_support::runtime]
 mod runtime {
@@ -331,6 +341,10 @@ mod runtime {
   // Include the custom logic from the IBP Check pallet in the runtime.
   #[runtime::pallet_index(10)]
   pub type IbpCheck = pallet_ibp_check;
+
+  // Include the custom logic from the IBP Alert pallet in the runtime.
+  #[runtime::pallet_index(11)]
+  pub type IbpAlert = pallet_ibp_alert;
 
 }
 

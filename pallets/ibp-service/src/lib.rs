@@ -10,8 +10,6 @@ use frame_support::{
     BoundedVec,
 };
 
-pub use pallet::*;
-
 // FRAME pallets require their own "mock runtimes" to be able to run unit tests. This module
 // contains a mock runtime specific for testing this pallet's functionality.
 #[cfg(test)]
@@ -366,3 +364,5 @@ pub mod pallet {
 
     }
 }
+
+pub use pallet::*;

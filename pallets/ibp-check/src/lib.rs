@@ -98,6 +98,7 @@ pub mod pallet {
 	}
 
     #[derive(Default, Debug, Encode, Decode, Clone, PartialEq, Eq, MaxEncodedLen, TypeInfo)]
+    #[scale_info(skip_type_params(T))]
     pub struct HealthCheckData<T: Config> {
         // member Id: unique identifier for the member, string
         pub member_id: T::AccountId,
@@ -119,36 +120,36 @@ pub mod pallet {
     //     }
     // }
 
-	// /// storage for this pallet.
+    // /// storage for this pallet.
     // #[pallet::storage]
-    // pub type Checks<T: Config> = StorageMap<_, Blake2_128Concat, T::AccountId, HealthCheckData, ValueQuery>;
+    // pub type Checks<T: Config> = StorageMap<_, Blake2_128Concat, T::AccountId, HealthCheckData<T>, ValueQuery>;
 
     /// Events that functions in this pallet can emit.
-	///
-	/// Events are a simple means of indicating to the outside world (such as dApps, chain explorers
-	/// or other users) that some notable update in the runtime has occurred. In a FRAME pallet, the
-	/// documentation for each event field and its parameters is added to a node's metadata so it
-	/// can be used by external interfaces or tools.
-	///
-	///	The `generate_deposit` macro generates a function on `Pallet` called `deposit_event` which
-	/// will convert the event type of your pallet into `RuntimeEvent` (declared in the pallet's
-	/// [`Config`] trait) and deposit it using [`frame_system::Pallet::deposit_event`].
-	#[pallet::event]
-	#[pallet::generate_deposit(pub(super) fn deposit_event)]
-	pub enum Event<T: Config> {
+    ///
+    /// Events are a simple means of indicating to the outside world (such as dApps, chain explorers
+    /// or other users) that some notable update in the runtime has occurred. In a FRAME pallet, the
+    /// documentation for each event field and its parameters is added to a node's metadata so it
+    /// can be used by external interfaces or tools.
+    ///
+    ///	The `generate_deposit` macro generates a function on `Pallet` called `deposit_event` which
+    /// will convert the event type of your pallet into `RuntimeEvent` (declared in the pallet's
+    /// [`Config`] trait) and deposit it using [`frame_system::Pallet::deposit_event`].
+    #[pallet::event]
+    #[pallet::generate_deposit(pub(super) fn deposit_event)]
+    pub enum Event<T: Config> {
         HealthCheckRegistered(T::AccountId, ServiceId, HealthCheckType, HealthCheckStatus),
-	}
+    }
 
-	/// Errors that can be returned by this pallet.
-	///
-	/// Errors tell users that something went wrong so it's important that their naming is
-	/// informative. Similar to events, error documentation is added to a node's metadata so it's
-	/// equally important that they have helpful documentation associated with them.
-	///
-	/// This type of runtime error can be up to 4 bytes in size should you want to return additional
-	/// information.
-	#[pallet::error]
-	pub enum Error<T> {
+    /// Errors that can be returned by this pallet.
+    ///
+    /// Errors tell users that something went wrong so it's important that their naming is
+    /// informative. Similar to events, error documentation is added to a node's metadata so it's
+    /// equally important that they have helpful documentation associated with them.
+    ///
+    /// This type of runtime error can be up to 4 bytes in size should you want to return additional
+    /// information.
+    #[pallet::error]
+   pub enum Error<T> {
         NotAMonitor,
         MemberNotFound,
         ServiceNotFound,
@@ -157,20 +158,20 @@ pub mod pallet {
         ServiceMembershipLevelMismatch,
 	}
 
-	/// The pallet's dispatchable functions ([`Call`]s).
-	///
-	/// Dispatchable functions allows users to interact with the pallet and invoke state changes.
-	/// These functions materialize as "extrinsics", which are often compared to transactions.
-	/// They must always return a `DispatchResult` and be annotated with a weight and call index.
-	///
-	/// The [`call_index`] macro is used to explicitly
-	/// define an index for calls in the [`Call`] enum. This is useful for pallets that may
-	/// introduce new dispatchables over time. If the order of a dispatchable changes, its index
-	/// will also change which will break backwards compatibility.
-	///
-	/// The [`weight`] macro is used to assign a weight to each call.
-	#[pallet::call]
-	impl<T: Config> Pallet<T> {
+    /// The pallet's dispatchable functions ([`Call`]s).
+    ///
+    /// Dispatchable functions allows users to interact with the pallet and invoke state changes.
+    /// These functions materialize as "extrinsics", which are often compared to transactions.
+    /// They must always return a `DispatchResult` and be annotated with a weight and call index.
+    ///
+    /// The [`call_index`] macro is used to explicitly
+    /// define an index for calls in the [`Call`] enum. This is useful for pallets that may
+    /// introduce new dispatchables over time. If the order of a dispatchable changes, its index
+    /// will also change which will break backwards compatibility.
+    ///
+    /// The [`weight`] macro is used to assign a weight to each call.
+    #[pallet::call]
+    impl<T: Config> Pallet<T> {
 
         #[pallet::call_index(0)]
         #[pallet::weight(10_000)]
