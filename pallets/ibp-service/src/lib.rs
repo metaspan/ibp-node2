@@ -47,17 +47,6 @@ pub enum ServiceStatus {
     Deleted = 9,
 }
 
-// #[derive(Debug, Encode, Decode, Clone, PartialEq, Eq, TypeInfo, MaxEncodedLen)]
-// pub enum ServiceMembershipLevel {
-//     None = 0,
-//     One = 1,
-//     Two = 2,
-//     Three = 3,
-//     Four = 4,
-//     Five = 5,
-//     Six = 6,
-// }
-
 impl Default for ServiceType {
     fn default() -> Self {
         ServiceType::RPC
@@ -76,6 +65,7 @@ pub mod pallet {
     // Import various useful types required by all FRAME pallets.
     use super::*;
     use frame_support::pallet_prelude::*;
+    use frame_support::storage::unhashed;
     use frame_system::pallet_prelude::*;
     // use pallet_ibp_member::Pallet as MembersPallet; // Import the Members pallet
     use pallet_ibp_member::Pallet as MemberPallet;
@@ -148,6 +138,10 @@ pub mod pallet {
     #[pallet::getter(fn services)]
     pub type Services<T: Config> = StorageMap<_, Blake2_128Concat, ServiceId, ServiceData<T>, ValueQuery>;
 
+    #[pallet::storage]
+    #[pallet::getter(fn service_overrides)]
+    pub type ServiceOverrides<T: Config> = StorageMap<_, Blake2_128Concat, (T::AccountId, ServiceId), u8, ValueQuery>;
+
     // read the curators from the members pallet
     // #[pallet::storage]
     // pub type Curators<T: Config> = StorageMap<_, Blake2_128Concat, T::AccountId, bool, ValueQuery>;
@@ -174,6 +168,8 @@ pub mod pallet {
         ServiceChilled(ServiceId),
         ServiceUnChilled(ServiceId),
         ServiceDeleted(ServiceId),
+        ServiceOverrideSet((T::AccountId, ServiceId)),
+        ServiceOverrideCleared((T::AccountId, ServiceId)),
     }
 
     /// Errors that can be returned by this pallet.
@@ -197,7 +193,12 @@ pub mod pallet {
         CuratorAlreadyExists,
         CuratorLimitReached,
         CannotRemoveLastCurator,
+        ServiceOverrideExists,
+        ServiceOverrideNotExists,
     }
+
+    // import MemberNotFound error from the member pallet
+    use pallet_ibp_member::Error as MemberError;
 
     /// The pallet's dispatchable functions ([`Call`]s).
     ///
@@ -326,6 +327,67 @@ pub mod pallet {
                 Self::deposit_event(Event::ServiceMembershipLevelUpdated(service_id.clone(), level.clone()));
                 Ok(())
             })?;
+            Ok(())
+        }
+
+        #[pallet::call_index(20)]
+        #[pallet::weight(10_000)]
+        pub fn set_service_override(origin: OriginFor<T>, service_id: ServiceId) -> DispatchResult {
+            let sender = ensure_signed(origin)?;
+            ensure!(Services::<T>::contains_key(&service_id), Error::<T>::ServiceNotFound);
+            let key = (sender.clone(), service_id.clone());
+            ensure!(!ServiceOverrides::<T>::contains_key(key.clone()), Error::<T>::ServiceOverrideExists);
+            ServiceOverrides::<T>::insert(key.clone(), 1);
+            Self::deposit_event(Event::ServiceOverrideSet(key));
+            Ok(())
+        }
+
+        #[pallet::call_index(21)]
+        #[pallet::weight(10_000)]
+        pub fn set_member_service_override(origin: OriginFor<T>, member_id: T::AccountId, service_id: ServiceId) -> DispatchResult {
+            let sender = ensure_signed(origin)?;
+            let member = MemberPallet::<T>::members(&member_id);
+            if Some(member) == None {
+                return Err(MemberError::<T>::MemberNotFound.into());
+            }
+            ensure!(Services::<T>::contains_key(&service_id), Error::<T>::ServiceNotFound);
+            // only curators can clear service overrides
+            ensure!(MemberPallet::<T>::curators(&sender), Error::<T>::NotACurator);
+            let key = (member_id.clone(), service_id.clone());
+            ensure!(!ServiceOverrides::<T>::contains_key(key.clone()), Error::<T>::ServiceOverrideExists);
+            ServiceOverrides::<T>::insert(key.clone(), 1);
+            Self::deposit_event(Event::ServiceOverrideSet(key));
+            Ok(())
+        }
+
+        #[pallet::call_index(30)]
+        #[pallet::weight(10_000)]
+        pub fn clear_service_override(origin: OriginFor<T>, service_id: ServiceId) -> DispatchResult {
+            let sender = ensure_signed(origin)?;
+            ensure!(Services::<T>::contains_key(&service_id), Error::<T>::ServiceNotFound);
+            let key = (sender.clone(), service_id.clone());
+            ensure!(ServiceOverrides::<T>::contains_key(key.clone()), Error::<T>::ServiceOverrideNotExists);
+            ServiceOverrides::<T>::remove(key.clone());
+            Self::deposit_event(Event::ServiceOverrideCleared(key));
+            Ok(())
+        }
+
+        #[pallet::call_index(31)]
+        #[pallet::weight(10_000)]
+        pub fn clear_member_service_override(origin: OriginFor<T>, member_id: T::AccountId, service_id: ServiceId) -> DispatchResult {
+            let sender = ensure_signed(origin)?;
+            let member = MemberPallet::<T>::members(&member_id);
+            if Some(member) == None {
+                return Err(MemberError::<T>::MemberNotFound.into());
+            }
+            // ensure!(MemberPallet::<T>::members::contains_key(&member_id), MemberError::MemberNotFound);
+            ensure!(Services::<T>::contains_key(&service_id), Error::<T>::ServiceNotFound);
+            // only curators can clear service overrides
+            ensure!(MemberPallet::<T>::curators(&sender), Error::<T>::NotACurator);
+            let key = (member_id.clone(), service_id.clone());
+            ensure!(ServiceOverrides::<T>::contains_key(key.clone()), Error::<T>::ServiceOverrideNotExists);
+            ServiceOverrides::<T>::remove(key.clone());
+            Self::deposit_event(Event::ServiceOverrideCleared(key));
             Ok(())
         }
 

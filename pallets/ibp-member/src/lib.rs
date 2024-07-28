@@ -441,7 +441,7 @@ pub mod pallet {
 
         #[pallet::call_index(80)]
         #[pallet::weight(10_000)]
-        pub fn assign_curator(origin: OriginFor<T>, account_id: T::AccountId) -> DispatchResult {
+        pub fn assign_curator(_origin: OriginFor<T>, account_id: T::AccountId) -> DispatchResult {
             //ensure_root(origin)?;
             // ensure the sender is ALICE
             ensure!(!Curators::<T>::contains_key(&account_id), Error::<T>::CuratorAlreadyExists);

@@ -76,6 +76,10 @@ import { getNonce, handleTransactionResponse } from './utils.js';
     // console.log(result.toJSON());
   }
 
+  // set a service override for alice asset-hub-westend-rpc
+  tx = api.tx.ibpService.setServiceOverride('asset-hub-westend-rpc');
+  await tx.signAndSend(alice, { nonce: alice_nonce++, tip: 1000000000 }, (r) => handleTransactionResponse(api, r));
+
   // sleep 6 seconds to allow charlie to monitor the services
   await new Promise(resolve => setTimeout(resolve, 6000));
 

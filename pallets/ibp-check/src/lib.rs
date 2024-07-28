@@ -198,7 +198,7 @@ pub mod pallet {
             // let level = ServiceMembershipLevel::Zero;
             // let status = ServiceStatus::Locked;
             // let service_id = id.clone();
-            let check_data: HealthCheckData<T> = HealthCheckData {
+            let _check_data: HealthCheckData<T> = HealthCheckData {
                 member_id: member_id.clone(),
                 service_id: service_id.clone(),
                 domain_id,
