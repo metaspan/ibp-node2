@@ -6,7 +6,7 @@
 git clone https://github.com/metaspan/ibp-node2
 cd ibp-node2
 cargo build
-./target/debug/node-template --dev \
+./target/debug/ibp-node --dev \
  --rpc-external \
  --rpc-cors=all 
 ```
