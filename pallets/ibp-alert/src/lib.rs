@@ -10,6 +10,9 @@ use frame_support::{
     BoundedVec,
 };
 
+/// implement jobs at the end of each session
+use pallet_session::{SessionManager, ShouldEndSession};
+
 // Re-export pallet items so that they can be accessed from the crate namespace.
 pub use pallet::*;
 
@@ -120,6 +123,10 @@ pub mod pallet {
     #[pallet::getter(fn alerts)]
     pub type Alerts<T: Config> = StorageMap<_, Blake2_128Concat, AlertKey<T>, AlertData<T>, OptionQuery>;
 
+    /// for fast access - check if alert exists
+    #[pallet::storage]
+    #[pallet::getter(fn alert_index)]
+    pub type AlertIndex<T: Config> = StorageMap<_, Blake2_128Concat, (T::AccountId, ServiceId, AlertType), u64, OptionQuery>;
 
     /// Events that functions in this pallet can emit.
     ///
@@ -136,6 +143,7 @@ pub mod pallet {
     pub enum Event<T: Config> {
         AlertRegistered(T::AccountId, ServiceId, DomainId, AlertType),
         AlertCleared(T::AccountId, ServiceId, DomainId, AlertType),
+        AlertIndexGenerated(),
     }
 
     /// Errors that can be returned by this pallet.
@@ -161,6 +169,7 @@ pub mod pallet {
         BadOriginOrNotACurator,
         // check for service membership level
         ServiceMembershipLevelMismatch,
+        MemberServiceAlertExists,
     }
 
     /// The pallet's dispatchable functions ([`Call`]s).
@@ -201,6 +210,8 @@ pub mod pallet {
             if service.status != ServiceStatus::Active {
                 return Err(Error::<T>::ServiceNotActive.into());
             }
+            let alert_index = (member_id.clone(), service_id.clone(), alert_type.clone());
+            ensure!(!AlertIndex::<T>::contains_key(alert_index.clone()), Error::<T>::MemberServiceAlertExists);
             // check member.level GE service.membershipLevel
             // ensure!(member.level >= service.level, Error::<T>::ServiceMembershipLevelMismatch);
             // let level = ServiceMembershipLevel::Zero;
@@ -218,6 +229,8 @@ pub mod pallet {
             // let key = ( sender.clone(), alert_id );
             // store the alert
             Alerts::<T>::insert(key, alert_data);
+            // update alert index
+            AlertIndex::<T>::insert(alert_index, 1);
             Self::deposit_event(Event::AlertRegistered(member_id, service_id, domain_id, alert_type));
             Ok(())
         }
@@ -240,6 +253,9 @@ pub mod pallet {
             );
             // delete the alert
             Alerts::<T>::remove(key);
+            // delete alert index
+            let alert_index = (sender.clone(), alert.service_id.clone(), alert.alert_type.clone());
+            AlertIndex::<T>::remove(alert_index);
             Self::deposit_event(Event::AlertCleared(sender, alert.service_id, alert.domain_id, alert.alert_type));
             Ok(())
         }
@@ -255,14 +271,50 @@ pub mod pallet {
             // only curators can force clear alerts
             ensure!(MemberPallet::<T>::curators(&sender), Error::<T>::NotACurator);
             // get the alert by (monitor, Id)
-            let key: AlertKey<T> = AlertKey { monitor_id, alert_id };
+            let key: AlertKey<T> = AlertKey { monitor_id: monitor_id.clone(), alert_id };
             // let key = ( monitor_id, alert_id );
             let alert: AlertData<T> = Alerts::<T>::get(key.clone()).ok_or(Error::<T>::AlertNotFound)?;
             // delete the alert
             Alerts::<T>::remove(key);
+            // delete alert index
+            let alert_index = (monitor_id.clone(), alert.service_id.clone(), alert.alert_type.clone());
+            AlertIndex::<T>::remove(alert_index);
             Self::deposit_event(Event::AlertCleared(sender, alert.service_id, alert.domain_id, alert.alert_type));
             Ok(())
         }
 
+    } // impl<T: Config> Pallet<T>
+
+    use pallet_session::SessionManager;
+    extern crate alloc;
+    use log::info;
+    use alloc::vec::Vec;
+    use frame_support::pallet_prelude::PhantomData;
+
+    /// Session Manager
+    pub struct IbpSessionManager<T>(PhantomData<T>);
+
+    impl<T: Config> SessionManager<T::AccountId> for IbpSessionManager<T> {
+
+        fn new_session(_new_index: u32) -> Option<Vec<T::AccountId>> {
+            None
+        }
+
+        fn end_session(_end_index: u32) {
+            // Insert your logic here
+        }
+
+        fn start_session(_start_index: u32) {
+            info!("New session, recalculating AlertIndex");
+            // clear the AlertIndex
+            AlertIndex::<T>::remove_all(None);
+            // recalculate the AlertIndex (to be sure...)
+            for (_, alert) in Alerts::<T>::iter() {
+                let key = (alert.member_id.clone(), alert.service_id.clone(), alert.alert_type);
+                AlertIndex::<T>::insert(key, 1);
+            };
+            Pallet::<T>::deposit_event(Event::AlertIndexGenerated());
+        }
     }
+
 }

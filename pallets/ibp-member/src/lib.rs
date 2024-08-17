@@ -42,6 +42,10 @@
 
 use codec::{ Decode, Encode, MaxEncodedLen };
 use scale_info::{self, TypeInfo};
+use frame_support::{
+  traits::ConstU32,
+  BoundedVec,
+};
 
 // Re-export pallet items so that they can be accessed from the crate namespace.
 pub use pallet::*;
@@ -66,6 +70,8 @@ mod tests;
 mod benchmarking;
 pub mod weights;
 pub use weights::*;
+
+pub type MemberName = BoundedVec<u8, ConstU32<32>>;
 
 #[derive(Clone, Copy, Debug, Encode, Decode, PartialEq, Eq, TypeInfo, MaxEncodedLen)]
 pub enum MemberStatus {
@@ -108,6 +114,8 @@ pub mod pallet {
     use frame_system::pallet_prelude::*;
     // import AccountId from frame_system
     // use frame_system::Config as SystemConfig;
+    extern crate alloc;
+    use alloc::vec::Vec;
 
     // The `Pallet` struct serves as a placeholder to implement traits, methods and dispatchables
     // (`Call`s) in this pallet.
@@ -136,6 +144,7 @@ pub mod pallet {
     #[scale_info(skip_type_params(T))]
     pub struct MemberData<T: Config> {
         pub id: Option<T::AccountId>,
+        pub name: MemberName,
         pub status: MemberStatus,
         pub level: MembershipLevel,
     }
@@ -144,6 +153,7 @@ pub mod pallet {
         fn default() -> Self {
             Self {
                 id: None,
+                name: Default::default(),
                 status: Default::default(), // MemberStatus::Active,
                 level: Default::default(), // MembershipLevel::None,
             }
@@ -190,15 +200,15 @@ pub mod pallet {
     #[pallet::storage]
     pub type CuratorCount<T: Config> = StorageValue<_, u32, ValueQuery>;
 
-    // /// GenesisConfig
+    // /// GenesisConfig - TODO move this to governanace!
     // #[pallet::genesis_config]
-    // pub struct GenesisConfig {
-    //     pub members: Vec<(T::AccountId, MemberData)>,
+    // pub struct GenesisConfig<T: Config> {
+    //     pub members: Vec<(T::AccountId, MemberData<T>)>,
     //     pub curators: Vec<T::AccountId>,
     // }
 
     // #[pallet::genesis_build]
-    // impl<T: Config> GenesisBuild<T> for GenesisConfig {
+    // impl<T: Config> GenesisBuild<T> for GenesisConfig<T> {
     //     fn build(&self) {
     //         // add ALICE as the first curator
     //         Curators::<T>::insert(&self.curators[0], true);
@@ -251,6 +261,7 @@ pub mod pallet {
         StorageOverflow,
         MemberAlreadyExists,
         MemberNotFound,
+        NameAlreadyExists,
         InvalidStatusTransition,
         NotACurator,
         CuratorAlreadyExists,
@@ -281,20 +292,44 @@ pub mod pallet {
         /// Only curators can update the level or status of a member
         #[pallet::call_index(0)]
         #[pallet::weight(10_000)]
-        pub fn register_member( origin: OriginFor<T> ) -> DispatchResult {
+        pub fn register_member( origin: OriginFor<T>, name: MemberName ) -> DispatchResult {
             let sender: T::AccountId = ensure_signed(origin)?;
             ensure!(!Members::<T>::contains_key(&sender), Error::<T>::MemberAlreadyExists);
+            // Ensure the member name is unique
+            let is_name_unique = !Members::<T>::iter().any(|(_, member_data)| {
+                member_data.name == name
+            });
+            ensure!(is_name_unique, Error::<T>::NameAlreadyExists);
             let member_id = sender.clone();
             let level = MembershipLevel::None;
             let status = MemberStatus::Locked;
-            let member_data = MemberData { id: Some(member_id), status, level };
+            let member_data = MemberData { id: Some(member_id), name, status, level };
             Members::<T>::insert(&sender, member_data);
             Self::deposit_event(Event::MemberRegistered(sender));
             Ok(())
         }
 
-        /// voluntary action by the member
         #[pallet::call_index(1)]
+        #[pallet::weight(10_000)]
+        pub fn set_member_name(origin: OriginFor<T>, name: MemberName) -> DispatchResult {
+            let sender: T::AccountId = ensure_signed(origin)?;
+            ensure!(Members::<T>::contains_key(&sender), Error::<T>::MemberNotFound);
+            // Ensure the member name is unique
+            let is_name_unique = !Members::<T>::iter().any(|(_, member_data)| {
+                member_data.name == name
+            });
+            ensure!(is_name_unique, Error::<T>::NameAlreadyExists);
+
+            Members::<T>::try_mutate(&sender, |data_option| -> DispatchResult {
+                let data = data_option; // .as_mut(); //.ok_or(Error::<T, I>::MemberNotFound)?;
+                data.name = name.clone();
+                Ok(())
+            })?;
+            Ok(())
+        }
+
+        /// voluntary action by the member
+        #[pallet::call_index(2)]
         #[pallet::weight(10_000)]
         pub fn chill_member(origin: OriginFor<T>) -> DispatchResult {
             let sender: T::AccountId = ensure_signed(origin)?;
@@ -313,7 +348,7 @@ pub mod pallet {
         }
         
         /// voluntary action by the member
-        #[pallet::call_index(2)]
+        #[pallet::call_index(3)]
         #[pallet::weight(10_000)]
         pub fn unchill_member(origin: OriginFor<T>) -> DispatchResult {
             let sender: T::AccountId = ensure_signed(origin)?;
@@ -330,7 +365,7 @@ pub mod pallet {
             Ok(())
         }
         
-        #[pallet::call_index(3)]
+        #[pallet::call_index(4)]
         #[pallet::weight(10_000)]
         pub fn lock_member(origin: OriginFor<T>, account_id: T::AccountId) -> DispatchResult {
             let sender: T::AccountId = ensure_signed(origin)?;
@@ -441,8 +476,9 @@ pub mod pallet {
 
         #[pallet::call_index(80)]
         #[pallet::weight(10_000)]
-        pub fn assign_curator(_origin: OriginFor<T>, account_id: T::AccountId) -> DispatchResult {
-            //ensure_root(origin)?;
+        pub fn assign_curator(origin: OriginFor<T>, account_id: T::AccountId) -> DispatchResult {
+            // TODO do this via governance
+            ensure_root(origin)?;
             // ensure the sender is ALICE
             ensure!(!Curators::<T>::contains_key(&account_id), Error::<T>::CuratorAlreadyExists);
             ensure!(CuratorCount::<T>::get() < 5, Error::<T>::CuratorLimitReached);

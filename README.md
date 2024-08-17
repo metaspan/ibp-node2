@@ -11,7 +11,7 @@ cargo build
  --rpc-cors=all 
 ```
 
-## Open another terminal
+## Setup: Open another terminal
 ```bash
 cd ibp-node2/tests
 node setup.sh
@@ -19,7 +19,15 @@ node setup.sh
 node watch-member-status.js
 ```
 
-## Open a browser
+## Custom frontend: Open another terminal
+```bash
+cd fe/nuxt
+npm run dev
+```
+- http://localhost:8080
+
+
+## PJS frontent: Open a browser
 
 Launch the Polkadot JS Apps in the browser and connect to the local node
 - https://polkadot.js.org/apps/#/explorer?rpc=ws://localhost:9944

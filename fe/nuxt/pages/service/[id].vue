@@ -1,0 +1,55 @@
+<template>
+  <v-container>
+    <v-card :loading="loading">
+      <v-card-title>
+        <v-btn icon small flat to="/service">
+          <v-icon>mdi-chevron-left</v-icon>
+        </v-btn>
+        {{ model?.id }}
+      </v-card-title>
+      <v-card-text>
+        ChainId: {{ model.chainId }}<br>
+        ID: {{ model.id }}<br>
+        Type: {{ model.serviceType }}<br>
+        Status: {{ model.status }}<br>
+        Level: {{ model.level }}
+      </v-card-text>
+    </v-card>
+    <!-- {{ id }} -->
+  </v-container>
+</template>
+
+<script lang="ts">
+import { defineComponent, computed, onBeforeMount } from 'vue'
+
+export default defineComponent({
+  setup () {
+    const store = useStore()
+    const route = useRoute()
+    const router = useRouter()
+    const id = route.params.id.toString()
+    const nuxtApp = useNuxtApp()
+    const substrate = nuxtApp.$substrate as ISubstrateAPI
+    const loading = ref(true)
+    var api = null
+    const model = ref({})
+
+    onBeforeMount(async () => {
+      console.debug('/service/[id].vue: onBeforeMount()')
+      api = substrate.api
+      await api.isReady
+      console.debug('api is ready')
+      const service = await api.query?.ibpService.services(id);
+      model.value = service.toHuman()
+      // console.debug(member.toJSON())
+      loading.value = false
+    })
+    
+    return {
+      loading,
+      id,
+      model,
+    }
+  }
+})
+</script>

@@ -44,6 +44,7 @@ pub use sp_runtime::{Perbill, Permill};
 
 /// Import the template pallet.
 pub use pallet_template;
+// pub use pallet_identity;
 
 /// Import the IBP Member pallet.
 pub use pallet_ibp_member;
@@ -258,6 +259,27 @@ impl pallet_template::Config for Runtime {
 	type WeightInfo = pallet_template::weights::SubstrateWeight<Runtime>;
 }
 
+// impl pallet_identity::Config for Runtime {
+//   type RuntimeEvent = RuntimeEvent;
+//   type Currency = Balances;
+//   type Slashed = ();
+//   type ForceOrigin = EnsureRoot<AccountId>;
+//   type RegistrarOrigin = EnsureRoot<AccountId>;
+//   type MaxSubAccounts = ConstU32<100>; // Adjust as needed
+//   type MaxRegistrars = ConstU32<20>; // Adjust as needed
+//   type BasicDeposit = ConstU128<10 * DOLLARS>; // Adjust as needed
+//   type FieldDeposit = ConstU128<250 * MILLICENTS>; // Adjust as needed
+//   type SubAccountDeposit = ConstU128<2 * DOLLARS>; // Adjust as needed
+//   type MaxAdditionalFields = ConstU32<100>; // Adjust as needed
+//   type MaxRegistrarsPerAccount = ConstU32<20>; // Adjust as needed
+//   type MaxLegalNameLength = ConstU32<64>; // Adjust as needed
+//   type MaxClassifiedNameLength = ConstU32<32>; // Adjust as needed
+//   type DataDepositPerByte = ConstU128<1 * CENTS>; // Adjust as needed
+//   type MaxJudgement = (); // Use default implementation
+//   type WeightInfo = pallet_identity::weights::SubstrateWeight<Runtime>;
+// }
+
+
 use codec::{ Decode, Encode, MaxEncodedLen };
 use scale_info::{self, TypeInfo};
 
@@ -345,6 +367,11 @@ mod runtime {
   // Include the custom logic from the IBP Alert pallet in the runtime.
   #[runtime::pallet_index(11)]
   pub type IbpAlert = pallet_ibp_alert;
+
+  // // Include Identity pallet
+  // #[runtime::pallet_index(12)]
+  // pub type Identity = pallet_identity;
+
 
 }
 

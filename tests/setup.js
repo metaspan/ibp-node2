@@ -36,13 +36,23 @@ import { getNonce, handleTransactionResponse } from './utils.js';
   const level = api.createType('MembershipLevel', 'One');
 
   // Register Members, ALICE and CHARLIE
-  tx = api.tx.ibpMember.registerMember();
+  tx = api.tx.ibpMember.registerMember('Alice');
   await tx.signAndSend(alice, { nonce: alice_nonce++, tip: 1000000000 }, (r) => handleTransactionResponse(api, r))
+  tx = api.tx.ibpMember.registerMember('Charlie');
   await tx.signAndSend(charlie, { nonce: charlie_nonce++, tip: 1000000000 }, (r) => handleTransactionResponse(api, r))
   
-  // Make BOB a Curator - TODO: This should be done by the council
+  // // Make BOB a Curator - TODO: This should be done by the council
+  // tx = api.tx.ibpMember.assignCurator(bob.address);
+  // await tx.signAndSend(alice, { nonce: alice_nonce++, tip: 1000000000 }, (r) => handleTransactionResponse(api, r))
+  // use SUdO to register BOB as a monitor
   tx = api.tx.ibpMember.assignCurator(bob.address);
-  await tx.signAndSend(alice, { nonce: alice_nonce++, tip: 1000000000 }, (r) => handleTransactionResponse(api, r))
+  let sudoTx = api.tx.sudo.sudo(tx);
+  console.debug('submitting sudoTx');
+  await sudoTx.signAndSend(alice, { nonce: alice_nonce++, tip: 1000000000 }, (r) => handleTransactionResponse(api, r))
+
+  // sleep 10 seconds to allow sudoTx to be executed
+  await new Promise(resolve => setTimeout(resolve, 30_000));
+  // process.exit(0);
 
   // register CHARLIE as a monitor - must be done by a curator
   tx = api.tx.ibpMember.assignMonitor(charlie.address);
